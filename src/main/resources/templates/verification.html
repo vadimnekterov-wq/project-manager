@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f7fa; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 15px; padding: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .header { text-align: center; color: #667eea; font-size: 24px; font-weight: bold; margin-bottom: 20px; }
+        .btn { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; border-radius: 25px; text-decoration: none; font-weight: bold; margin: 20px 0; }
+        .footer { color: #999; font-size: 12px; margin-top: 30px; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">📋 Проектный менеджер</div>
+    <p>Здравствуйте, <strong th:text="${username}"></strong>!</p>
+    <p>Вы зарегистрировались в системе управления проектами. Для подтверждения email перейдите по ссылке:</p>
+    <div style="text-align: center;">
+        <a class="btn" th:href="${confirmationLink}">Подтвердить email</a>
+    </div>
+    <p>Ссылка действительна 24 часа.</p>
+    <div class="footer">С уважением, команда Проектного менеджера</div>
+</div>
+</body>
+</html>
