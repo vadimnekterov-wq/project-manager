@@ -3,20 +3,16 @@ package com.example.projectmanager.security;
 import com.example.projectmanager.model.User;
 import com.example.projectmanager.repository.UserRepository;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
-
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Service
-public class JdbcUserDetailsService implements UserDetailsService {
+public class AppUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
-    public JdbcUserDetailsService(UserRepository userRepository) {
+    public AppUserDetailsService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
@@ -25,17 +21,22 @@ public class JdbcUserDetailsService implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + username));
 
-        Set<String> roleNames = userRepository.findRoleNamesByUserId(user.getId());
-        var authorities = roleNames.stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toSet());
+        if (user.isBlocked()) {
+            throw new RuntimeException("⛔ Ваш аккаунт заблокирован! Причина: " +
+                    (user.getBlockedReason() != null ? user.getBlockedReason() : "нарушение правил"));
+        }
+
+        String role = user.getRole();
+        if (role == null || role.isEmpty()) role = "ROLE_USER";
+
+        System.out.println(">>> Вход: " + username + ", роль: " + role);
 
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
-                user.getPasswordHash(),
+                user.getPassword(),
                 user.isEnabled(),
                 true, true, true,
-                authorities
+                List.of(new SimpleGrantedAuthority(role))
         );
     }
 }
