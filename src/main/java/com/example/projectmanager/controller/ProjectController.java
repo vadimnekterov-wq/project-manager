@@ -1,10 +1,10 @@
 package com.example.projectmanager.controller;
 
 import com.example.projectmanager.model.Project;
+import com.example.projectmanager.repository.UserRepository;
 import com.example.projectmanager.service.ProjectService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -13,22 +13,21 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/projects")
 public class ProjectController {
     private final ProjectService projectService;
+    private final UserRepository userRepository;
 
-    public ProjectController(ProjectService projectService) {
+    public ProjectController(ProjectService projectService, UserRepository userRepository) {
         this.projectService = projectService;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
-    public String list(Model model, Authentication authentication) {
-        if (authentication != null) {
-            String role = authentication.getAuthorities().stream()
-                    .findFirst()
-                    .map(GrantedAuthority::getAuthority)
-                    .orElse("");
-            model.addAttribute("role", role);
-            model.addAttribute("username", authentication.getName());
-        }
+    public String list(Model model, Authentication auth) {
         model.addAttribute("projects", projectService.getAll());
+        model.addAttribute("username", auth.getName());
+        model.addAttribute("isAdmin", auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")));
+        model.addAttribute("isManager", auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER")));
         return "projects";
     }
 
@@ -41,28 +40,15 @@ public class ProjectController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public String create(@ModelAttribute Project project) {
-        project.setOwnerId(1L);
+    public String create(@ModelAttribute Project project, Authentication auth) {
+        Long userId = userRepository.findByUsername(auth.getName()).get().getId();
+        project.setOwnerId(userId);
         projectService.create(project);
         return "redirect:/projects";
     }
 
-    @GetMapping("/{id}")
-    public String view(@PathVariable Long id, Model model, Authentication authentication) {
-        if (authentication != null) {
-            String role = authentication.getAuthorities().stream()
-                    .findFirst()
-                    .map(GrantedAuthority::getAuthority)
-                    .orElse("");
-            model.addAttribute("role", role);
-            model.addAttribute("username", authentication.getName());
-        }
-        projectService.getById(id).ifPresent(p -> model.addAttribute("project", p));
-        return "project-detail";
-    }
-
     @GetMapping("/{id}/delete")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public String delete(@PathVariable Long id) {
         projectService.delete(id);
         return "redirect:/projects";
