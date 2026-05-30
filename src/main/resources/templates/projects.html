@@ -2,87 +2,87 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
     <title>Проекты</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background-size: 200% 200%;
+            animation: gradientShift 8s ease infinite;
+            font-family: 'Poppins', 'Segoe UI', sans-serif;
             min-height: 100vh;
         }
-        .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
-        .content-card {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            margin-top: 30px;
-        }
-        .table {
-            border-radius: 15px;
-            overflow: hidden;
-        }
-        .table thead {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .btn-create {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 25px;
-            padding: 10px 25px;
-            font-weight: bold;
-            color: white;
-            transition: all 0.3s;
-        }
-        .btn-create:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-            color: white;
-        }
+        .navbar-custom { background: rgba(255,255,255,0.98); backdrop-filter: blur(15px); padding: 12px 40px; border-radius: 0 0 25px 25px; box-shadow: 0 5px 30px rgba(0,0,0,0.1); }
+        .navbar-brand { font-size: 1.6rem; font-weight: 800; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-link { color: #4a5568 !important; font-weight: 600; margin: 0 8px; padding: 8px 20px !important; border-radius: 40px; }
+        .nav-link:hover, .nav-link.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white !important; }
+        .user-menu { background: linear-gradient(135deg, #667eea, #764ba2); padding: 8px 20px; border-radius: 40px; display: flex; align-items: center; gap: 12px; color: white; font-weight: 500; }
+        .role-badge { background: rgba(255,255,255,0.25); padding: 4px 12px; border-radius: 30px; font-size: 0.75rem; }
+        .btn-logout { background: transparent; border: 2px solid #ef4444; color: #ef4444; border-radius: 40px; padding: 8px 22px; }
+        .btn-logout:hover { background: #ef4444; color: white; }
+        .content-card { background: rgba(255,255,255,0.98); border-radius: 28px; padding: 35px; margin: 30px auto; max-width: 1200px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); border: none; border-radius: 40px; padding: 10px 28px; font-weight: 600; color: white; }
+        .btn-primary:hover { transform: translateY(-2px); }
+        .table { background: white; border-radius: 20px; overflow: hidden; }
+        .table thead { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .table thead th { padding: 15px; font-weight: 600; border: none; }
+        .table tbody tr:hover { background: #f8f9fa; }
+        h1 { background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
+        .btn { border-radius: 40px !important; }
     </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark">
-    <div class="container">
-        <a class="navbar-brand" href="/">📋 Проектный менеджер</a>
-        <div class="navbar-nav ms-auto">
-            <span class="navbar-text text-white me-3">
-                👤 <strong th:text="${username}"></strong> (<span th:text="${role}"></span>)
-            </span>
-            <a class="nav-link" href="/logout">🚪 Выход</a>
+<nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/dashboard"><i class="fas fa-tasks"></i> Project Manager</a>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mx-auto">
+                <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="fas fa-home"></i> Главная</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/projects"><i class="fas fa-folder"></i> Проекты</a></li>
+                <li class="nav-item" th:if="${isAdmin}"><a class="nav-link" href="/admin/users"><i class="fas fa-users-cog"></i> Пользователи</a></li>
+            </ul>
+            <div class="d-flex align-items-center gap-3">
+                <div class="user-menu"><i class="fas fa-user-circle"></i><span th:text="${username}"></span><span class="role-badge" th:text="${isAdmin} ? 'ADMIN' : (${isManager} ? 'MANAGER' : 'USER')"></span></div>
+                <form th:action="@{/logout}" method="post" style="display:inline;">
+                    <button type="submit" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Выйти</button>
+                </form>
+            </div>
         </div>
     </div>
 </nav>
-
 <div class="container">
     <div class="content-card">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>📁 Проекты</h1>
-            <div th:if="${role == 'ROLE_ADMIN' || role == 'ROLE_MANAGER'}">
-                <a href="/projects/new" class="btn btn-create">➕ Создать проект</a>
-            </div>
+            <h1><i class="fas fa-folder"></i> Проекты</h1>
+            <a th:if="${isAdmin || isManager}" href="/projects/new" class="btn btn-primary"><i class="fas fa-plus"></i> Создать проект</a>
         </div>
-
-        <table class="table table-hover">
-            <thead>
-            <tr><th>ID</th><th>Название</th><th>Действия</th></tr>
-            </thead>
-            <tbody>
-            <tr th:each="p : ${projects}">
-                <td><span class="badge bg-secondary" th:text="${p.id}"></span></td>
-                <td><a th:href="@{/projects/{id}(id=${p.id})}" th:text="${p.name}" style="text-decoration: none; font-weight: 500;"></a></td>
-                <td>
-                    <a th:href="@{/tasks/project/{id}(id=${p.id})}" class="btn btn-outline-info btn-sm">✅ Задачи</a>
-                    <a th:href="@{/forum/project/{id}(id=${p.id})}" class="btn btn-outline-warning btn-sm">💬 Форум</a>
-                    <a th:if="${role == 'ROLE_ADMIN'}" th:href="@{/projects/{id}/delete(id=${p.id})}" class="btn btn-outline-danger btn-sm">🗑 Удалить</a>
-                </td>
-            </tr>
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table">
+                <thead><tr><th>ID</th><th>Название</th><th>Действия</th></tr></thead>
+                <tbody>
+                <tr th:each="p : ${projects}">
+                    <td th:text="${p.id}"></td>
+                    <td th:text="${p.name}"></td>
+                    <td>
+                        <a th:href="@{/tasks/project/{id}(id=${p.id})}" class="btn btn-outline-info btn-sm me-1"><i class="fas fa-tasks"></i> Задачи</a>
+                        <a th:href="@{/forum/project/{id}(id=${p.id})}" class="btn btn-outline-warning btn-sm me-1"><i class="fas fa-comments"></i> Форум</a>
+                        <a th:if="${isAdmin || isManager}" th:href="@{/projects/{id}/delete(id=${p.id})}" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i> Удалить</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
