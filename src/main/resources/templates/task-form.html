@@ -2,49 +2,134 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Задача</title>
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    <title>Создание задачи</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background-size: 200% 200%;
+            animation: gradientShift 8s ease infinite;
+            font-family: 'Poppins', 'Segoe UI', sans-serif;
+            min-height: 100vh;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            padding: 12px 40px;
+            border-radius: 0 0 25px 25px;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.1);
+        }
+        .navbar-brand { font-size: 1.6rem; font-weight: 800; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-link { color: #4a5568 !important; font-weight: 600; margin: 0 8px; padding: 8px 20px !important; border-radius: 40px; }
+        .nav-link:hover, .nav-link.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white !important; transform: translateY(-3px); }
+        .user-menu { background: linear-gradient(135deg, #667eea, #764ba2); padding: 8px 20px; border-radius: 40px; display: flex; align-items: center; gap: 12px; color: white; font-weight: 500; }
+        .role-badge { background: rgba(255,255,255,0.25); padding: 4px 12px; border-radius: 30px; font-size: 0.75rem; }
+        .btn-logout { background: transparent; border: 2px solid #ef4444; color: #ef4444; border-radius: 40px; padding: 8px 22px; transition: all 0.3s; }
+        .btn-logout:hover { background: #ef4444; color: white; transform: translateY(-2px); }
+
+        .form-card { background: rgba(255, 255, 255, 0.98); border-radius: 28px; padding: 40px; margin: 50px auto; max-width: 650px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); border: none; border-radius: 40px; padding: 14px; font-weight: 600; width: 100%; transition: all 0.3s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
+        .btn-outline-secondary { border-radius: 40px; border: 2px solid #718096; color: #718096; padding: 8px 20px; text-decoration: none; transition: all 0.3s; display: inline-block; }
+        .btn-outline-secondary:hover { background: #718096; color: white; transform: translateX(-5px); }
+        .form-control, .form-select { border-radius: 40px; padding: 14px 20px; border: 2px solid #e2e8f0; }
+        .form-control:focus, .form-select:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.2); }
+        h2 { background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; text-align: center; margin-bottom: 30px; }
+        label { font-weight: 600; color: #2d3748; margin-bottom: 8px; }
+    </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand" href="/">Проектный менеджер</a>
-        <div class="navbar-nav">
-            <a class="nav-link" th:href="@{/tasks/project/{id}(id=${task.projectId})}">← Назад к задачам</a>
+
+<nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/dashboard"><i class="fas fa-tasks"></i> Project Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mx-auto">
+                <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="fas fa-home"></i> Главная</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/projects"><i class="fas fa-folder"></i> Проекты</a></li>
+                <li class="nav-item" th:if="${isAdmin}"><a class="nav-link" href="/admin/users"><i class="fas fa-users-cog"></i> Пользователи</a></li>
+            </ul>
+            <div class="d-flex align-items-center gap-3">
+                <div class="user-menu"><i class="fas fa-user-circle"></i><span th:text="${username}"></span><span class="role-badge" th:text="${isAdmin} ? 'ADMIN' : (${isManager} ? 'MANAGER' : 'USER')"></span></div>
+                <form th:action="@{/logout}" method="post" style="display:inline;">
+                    <button type="submit" class="btn-logout">Выйти</button>
+                </form>
+            </div>
         </div>
     </div>
 </nav>
-<div class="container mt-4" style="max-width: 600px;">
-    <h1 th:text="${task.id == null ? 'Новая задача' : 'Редактировать задачу'}"></h1>
-    <form th:action="@{/tasks}" th:object="${task}" method="post">
-        <input type="hidden" th:field="*{projectId}">
-        <div class="mb-3">
-            <label class="form-label">Название</label>
-            <input type="text" class="form-control" th:field="*{title}" required>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Описание</label>
-            <textarea class="form-control" th:field="*{description}" rows="3"></textarea>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Статус</label>
-            <select class="form-control" th:field="*{status}">
-                <option value="NEW">Новая</option>
-                <option value="IN_PROGRESS">В работе</option>
-                <option value="DONE">Завершена</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Приоритет</label>
-            <select class="form-control" th:field="*{priority}">
-                <option value="LOW">Низкий</option>
-                <option value="MEDIUM">Средний</option>
-                <option value="HIGH">Высокий</option>
-            </select>
-        </div>
-        <button type="submit" class="btn btn-primary">Сохранить</button>
-        <a th:href="@{/tasks/project/{id}(id=${task.projectId})}" class="btn btn-secondary">Отмена</a>
-    </form>
+
+<div class="container">
+    <div class="form-card">
+        <a th:href="@{/tasks/project/{id}(id=${task.projectId})}" class="btn-outline-secondary btn-sm mb-4" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+            <i class="fas fa-arrow-left"></i> Назад к задачам
+        </a>
+        <h2><i class="fas fa-plus-circle"></i> <span th:text="${task.id == null ? 'Создать задачу' : 'Редактировать задачу'}"></span></h2>
+
+        <form th:action="@{/tasks}" th:object="${task}" method="post">
+            <input type="hidden" th:field="*{projectId}">
+
+            <div class="mb-4">
+                <label class="form-label"><i class="fas fa-heading"></i> Название задачи</label>
+                <input type="text" class="form-control" th:field="*{title}" placeholder="Например: Разработать API" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label"><i class="fas fa-align-left"></i> Описание</label>
+                <textarea class="form-control" th:field="*{description}" rows="4" placeholder="Подробное описание задачи..."></textarea>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="form-label"><i class="fas fa-chart-simple"></i> Статус</label>
+                    <select class="form-select" th:field="*{status}">
+                        <option value="NEW">🟡 Новая</option>
+                        <option value="IN_PROGRESS">🔵 В работе</option>
+                        <option value="DONE">✅ Завершена</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><i class="fas fa-flag"></i> Приоритет</label>
+                    <select class="form-select" th:field="*{priority}">
+                        <option value="LOW">🟢 Низкий</option>
+                        <option value="MEDIUM">🟠 Средний</option>
+                        <option value="HIGH">🔴 Высокий</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- НОВОЕ: Выбор исполнителя -->
+            <div class="mb-4">
+                <label class="form-label"><i class="fas fa-user"></i> Исполнитель</label>
+                <select class="form-select" th:field="*{assigneeId}">
+                    <option value="">-- Не назначен --</option>
+                    <option th:each="u : ${users}" th:value="${u.id}" th:text="${u.username}"></option>
+                </select>
+            </div>
+
+            <!-- НОВОЕ: Срок выполнения -->
+            <div class="mb-4">
+                <label class="form-label"><i class="fas fa-calendar-alt"></i> Срок выполнения</label>
+                <input type="date" class="form-control" th:field="*{dueDate}">
+            </div>
+
+            <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Сохранить задачу</button>
+        </form>
+    </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
