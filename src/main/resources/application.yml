@@ -4,13 +4,8 @@ spring:
     username: postgres
     password: 2019Vad2019
     driver-class-name: org.postgresql.Driver
-
-  flyway:
-    enabled: false
-
   thymeleaf:
     cache: false
-
   mail:
     host: localhost
     port: 1025
@@ -23,9 +18,3 @@ spring:
 app:
   mail:
     from: no-reply@project-manager.local
-  base-url: http://localhost:8080
-
-logging:
-  level:
-    org.springframework.jdbc: DEBUG
-    com.example: DEBUG
