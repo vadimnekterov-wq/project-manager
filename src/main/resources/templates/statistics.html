@@ -2,159 +2,104 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Статистика</title>
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    <title>Статистика проекта</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background-size: 200% 200%;
+            animation: gradientShift 8s ease infinite;
+            font-family: 'Poppins', 'Segoe UI', sans-serif;
             min-height: 100vh;
         }
-        .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
-        .stat-card {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            margin-top: 30px;
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            padding: 12px 40px;
+            border-radius: 0 0 25px 25px;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.1);
         }
-        .chart-container {
-            position: relative;
-            height: 350px;
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-        .summary-cards {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 30px;
-        }
-        .summary-item {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 15px;
-            padding: 20px 30px;
-            text-align: center;
-            min-width: 120px;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-        }
-        .summary-item .number {
-            font-size: 2rem;
-            font-weight: bold;
-        }
-        .summary-item .label {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
+        .navbar-brand { font-size: 1.6rem; font-weight: 800; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-link { color: #4a5568 !important; font-weight: 600; margin: 0 8px; padding: 8px 20px !important; border-radius: 40px; transition: all 0.3s; }
+        .nav-link i { margin-right: 8px; }
+        .nav-link:hover, .nav-link.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white !important; transform: translateY(-3px); }
+        .user-menu { background: linear-gradient(135deg, #667eea, #764ba2); padding: 8px 20px; border-radius: 40px; display: flex; align-items: center; gap: 12px; color: white; font-weight: 500; }
+        .role-badge { background: rgba(255,255,255,0.25); padding: 4px 12px; border-radius: 30px; font-size: 0.75rem; }
+        .btn-logout { background: transparent; border: 2px solid #ef4444; color: #ef4444; border-radius: 40px; padding: 8px 22px; transition: all 0.3s; }
+        .btn-logout:hover { background: #ef4444; color: white; transform: translateY(-2px); }
+        .content-card { background: rgba(255, 255, 255, 0.98); border-radius: 28px; padding: 35px; margin: 30px auto; max-width: 900px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .stats-row { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-bottom: 35px; }
+        .stat-item { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 20px; padding: 20px 30px; text-align: center; min-width: 100px; box-shadow: 0 10px 25px rgba(102,126,234,0.3); }
+        .stat-item h3 { font-size: 2rem; margin: 0; font-weight: 800; }
+        .stat-item small { font-size: 0.8rem; opacity: 0.9; }
+        .time-info { background: linear-gradient(135deg, #667eea20, #764ba220); border-radius: 20px; padding: 20px; margin-top: 25px; text-align: center; backdrop-filter: blur(5px); border: 1px solid rgba(102,126,234,0.3); }
+        .bar-chart { display: flex; align-items: flex-end; gap: 50px; justify-content: center; height: 300px; margin: 30px 0; padding: 0 20px; }
+        .bar-wrapper { display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+        .bar { width: 80px; background: linear-gradient(135deg, #667eea, #764ba2); text-align: center; color: white; font-weight: bold; font-size: 1.2rem; padding-top: 8px; border-radius: 15px 15px 0 0; transition: height 0.3s; }
+        .bar-label { margin-top: 12px; font-size: 0.9rem; color: #4a5568; font-weight: 600; }
+        h2 { background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; text-align: center; margin-bottom: 30px; }
+        .btn-back { background: #718096; color: white; border-radius: 40px; padding: 8px 22px; text-decoration: none; transition: all 0.3s; display: inline-block; margin-bottom: 20px; }
+        .btn-back:hover { background: #4a5568; transform: translateX(-5px); }
     </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark">
-    <div class="container">
-        <a class="navbar-brand" href="/">📋 Проектный менеджер</a>
-        <a class="nav-link text-white" th:href="@{/tasks/project/{id}(id=${projectId})}">← Назад к задачам</a>
-        <div class="navbar-nav ms-auto">
-            <a class="nav-link" href="/logout">🚪 Выход</a>
+
+<nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/dashboard"><i class="fas fa-tasks"></i> Project Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mx-auto">
+                <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="fas fa-home"></i> Главная</a></li>
+                <li class="nav-item"><a class="nav-link" href="/projects"><i class="fas fa-folder"></i> Проекты</a></li>
+                <li class="nav-item" th:if="${isAdmin}"><a class="nav-link" href="/admin/users"><i class="fas fa-users-cog"></i> Пользователи</a></li>
+            </ul>
+            <div class="d-flex align-items-center gap-3">
+                <div class="user-menu"><i class="fas fa-user-circle"></i><span th:text="${username}"></span><span class="role-badge" th:text="${isAdmin} ? 'ADMIN' : (${isManager} ? 'MANAGER' : 'USER')"></span></div>
+                <form th:action="@{/logout}" method="post" style="display:inline;">
+                    <button type="submit" class="btn-logout">Выйти</button>
+                </form>
+            </div>
         </div>
     </div>
 </nav>
 
 <div class="container">
-    <div class="stat-card">
-        <h2 class="text-center mb-4">📊 Статистика по проекту #<span th:text="${projectId}"></span></h2>
+    <div class="content-card">
+        <a href="/projects" class="btn-back"><i class="fas fa-arrow-left"></i> Назад к проектам</a>
+        <h2><i class="fas fa-chart-line"></i> Статистика проекта</h2>
 
-        <div class="summary-cards">
-            <div class="summary-item">
-                <div class="number" th:text="${totalTasks}">0</div>
-                <div class="label">📌 Всего задач</div>
-            </div>
-            <div class="summary-item" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                <div class="number" th:text="${newTasks}">0</div>
-                <div class="label">🆕 Новые</div>
-            </div>
-            <div class="summary-item" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                <div class="number" th:text="${inProgressTasks}">0</div>
-                <div class="label">🔄 В работе</div>
-            </div>
-            <div class="summary-item" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                <div class="number" th:text="${doneTasks}">0</div>
-                <div class="label">✅ Завершено</div>
-            </div>
+        <div class="stats-row">
+            <div class="stat-item"><h3 th:text="${newTasks}">0</h3><small>Новые</small></div>
+            <div class="stat-item"><h3 th:text="${inProgressTasks}">0</h3><small>В работе</small></div>
+            <div class="stat-item"><h3 th:text="${doneTasks}">0</h3><small>Готово</small></div>
+            <div class="stat-item"><h3 th:text="${totalTasks}">0</h3><small>Всего</small></div>
         </div>
 
-        <div class="chart-container">
-            <canvas id="taskBarChart"></canvas>
+        <div class="bar-chart">
+            <div class="bar-wrapper"><div class="bar" th:style="'height:' + (${newTasks} * 60 + 30) + 'px'" th:text="${newTasks}">0</div><div class="bar-label"><i class="fas fa-plus-circle"></i> Новые</div></div>
+            <div class="bar-wrapper"><div class="bar" th:style="'height:' + (${inProgressTasks} * 60 + 30) + 'px'" th:text="${inProgressTasks}">0</div><div class="bar-label"><i class="fas fa-spinner"></i> В работе</div></div>
+            <div class="bar-wrapper"><div class="bar" th:style="'height:' + (${doneTasks} * 60 + 30) + 'px'" th:text="${doneTasks}">0</div><div class="bar-label"><i class="fas fa-check-circle"></i> Готово</div></div>
+        </div>
+
+        <div class="time-info">
+            <i class="fas fa-clock" style="color: #667eea; font-size: 1.5rem;"></i>
+            <p class="mt-2 mb-0"><strong>Общее время:</strong> <span th:text="${hours} + ' ч ' + ${minutes} + ' мин'">0 ч 0 мин</span></p>
         </div>
     </div>
 </div>
 
-<script>
-    // Получаем данные из Thymeleaf
-    var newTasks = parseInt('[[${newTasks}]]' || '0');
-    var inProgressTasks = parseInt('[[${inProgressTasks}]]' || '0');
-    var doneTasks = parseInt('[[${doneTasks}]]' || '0');
-
-    const ctx = document.getElementById('taskBarChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Новые', 'В работе', 'Завершено'],
-            datasets: [{
-                label: 'Количество задач',
-                data: [newTasks, inProgressTasks, doneTasks],
-                backgroundColor: [
-                    'rgba(79, 172, 254, 0.8)',
-                    'rgba(240, 147, 251, 0.8)',
-                    'rgba(67, 233, 123, 0.8)'
-                ],
-                borderColor: [
-                    'rgba(79, 172, 254, 1)',
-                    'rgba(240, 147, 251, 1)',
-                    'rgba(67, 233, 123, 1)'
-                ],
-                borderWidth: 2,
-                borderRadius: 10,
-                borderSkipped: false,
-                barPercentage: 0.6,
-                categoryPercentage: 0.8
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1,
-                        font: { size: 14 }
-                    },
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    }
-                },
-                x: {
-                    ticks: {
-                        font: { size: 14 }
-                    },
-                    grid: {
-                        display: false
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
-        }
-    });
-</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
